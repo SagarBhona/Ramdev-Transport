@@ -1,0 +1,979 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+  :root{
+    --paper:#FBF6EC;
+    --paper-deep:#F4ECDC;
+    --rule:#DED0AC;
+    --ink:#1E2230;
+    --ink-soft:#5B5644;
+    --muted:#92896E;
+    --yellow:#FFC72C;
+    --plate-ink:#15171F;
+    --rust:#B14A2A;
+    --rust-soft:#F4DECF;
+    --diesel:#2E6B4C;
+    --diesel-soft:#DDEBE0;
+    --card:#FFFFFF;
+    --shadow:0 1px 2px rgba(30,34,48,.06), 0 8px 20px rgba(30,34,48,.05);
+  }
+
+  *{box-sizing:border-box;}
+  #rt-root{
+    font-family:'IBM Plex Sans',sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    min-height:100%;
+    padding:18px 14px 60px;
+    line-height:1.4;
+    -webkit-font-smoothing:antialiased;
+  }
+  #rt-root *{outline-color:var(--rust);}
+  #rt-root .wrap{max-width:920px;margin:0 auto;}
+
+  .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
+  .display{font-family:'Oswald',sans-serif;text-transform:uppercase;}
+
+  /* ---------- header ---------- */
+  .ledger-head{
+    display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+    flex-wrap:wrap;
+    padding-bottom:14px;border-bottom:3px double var(--rule);margin-bottom:18px;
+  }
+  .ledger-head h1{
+    font-family:'Oswald',sans-serif;font-weight:700;text-transform:uppercase;
+    font-size:clamp(26px,5vw,38px);letter-spacing:.5px;margin:0;color:var(--ink);
+    cursor:pointer;
+  }
+  .ledger-head .sub{color:var(--ink-soft);font-size:13px;margin-top:2px;cursor:pointer;}
+  .stamp{
+    border:2px dashed var(--rust);color:var(--rust);font-family:'Oswald',sans-serif;
+    font-weight:600;letter-spacing:1px;text-transform:uppercase;font-size:12.5px;
+    padding:6px 12px;border-radius:3px;transform:rotate(-2.5deg);white-space:nowrap;
+  }
+  .meta-edit-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .meta-edit-form input{font-family:'Oswald',sans-serif;font-size:18px;padding:6px 8px;border:1px solid var(--rule);border-radius:4px;background:#fff;}
+
+  /* ---------- nav ---------- */
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--rule);margin-bottom:20px;overflow-x:auto;}
+  .tab-btn{
+    font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.6px;
+    font-size:13.5px;font-weight:500;color:var(--ink-soft);background:none;border:none;
+    padding:10px 14px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;
+  }
+  .tab-btn:hover{color:var(--ink);}
+  .tab-btn.active{color:var(--ink);border-bottom-color:var(--rust);font-weight:600;}
+
+  /* ---------- plate chips (signature element) ---------- */
+  .chip-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
+  .plate{
+    position:relative;background:var(--yellow);border:2px solid var(--plate-ink);
+    border-radius:5px;padding:8px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;
+    font-family:'Oswald',sans-serif;font-weight:600;font-size:15px;letter-spacing:1.5px;
+    color:var(--plate-ink);transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .plate::before,.plate::after{
+    content:'';position:absolute;top:4px;width:4px;height:4px;border-radius:50%;
+    background:var(--plate-ink);opacity:.55;
+  }
+  .plate::before{left:6px;}
+  .plate::after{right:6px;}
+  .plate:hover{transform:translateY(-1px);}
+  .plate.active{box-shadow:var(--shadow);transform:translateY(-1px);}
+  .plate.active{outline:2px solid var(--ink);outline-offset:2px;}
+  .plate .trips{display:block;font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:10.5px;letter-spacing:.3px;text-transform:none;opacity:.75;}
+  .chip-x{background:none;border:none;cursor:pointer;font-size:11px;color:rgba(21,23,31,.5);padding:1px 3px;line-height:1;font-family:'IBM Plex Sans',sans-serif;}
+  .chip-x:hover{color:var(--rust);}
+  .person-chip .chip-x{color:var(--muted);}
+  .person-chip .chip-x:hover{color:var(--rust);}
+
+  .add-chip{
+    border:2px dashed var(--rule);color:var(--ink-soft);background:none;border-radius:6px;
+    padding:8px 16px;cursor:pointer;font-family:'Oswald',sans-serif;font-weight:500;font-size:13px;
+    letter-spacing:.5px;text-transform:uppercase;transition:border-color .12s ease,color .12s ease;
+  }
+  .add-chip:hover{border-color:var(--ink-soft);color:var(--ink);}
+
+  .person-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
+  .person-chip{
+    display:flex;align-items:center;gap:8px;background:var(--card);border:1.5px solid var(--rule);
+    border-radius:30px;padding:6px 10px 6px 6px;cursor:pointer;font-size:13.5px;color:var(--ink-soft);
+    transition:border-color .12s ease;
+  }
+  .person-chip:hover{border-color:var(--ink-soft);}
+  .person-chip.active{border-color:var(--ink);color:var(--ink);font-weight:600;background:var(--paper-deep);}
+  .person-avatar{
+    width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--paper);
+    display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;
+    font-size:12px;flex-shrink:0;
+  }
+
+  .inline-add-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;background:var(--paper-deep);padding:10px 12px;border-radius:8px;border:1px solid var(--rule);}
+  .inline-add-form input{font-size:13.5px;padding:7px 10px;border:1px solid var(--rule);border-radius:5px;background:#fff;flex:1;min-width:160px;}
+
+  /* ---------- dashboard ---------- */
+  .veh-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:22px;}
+  .veh-card{background:var(--card);border-radius:10px;box-shadow:var(--shadow);padding:18px;animation:riseIn .4s ease both;}
+  .veh-card:nth-child(2){animation-delay:.06s;}
+  .veh-card:nth-child(3){animation-delay:.12s;}
+  @keyframes riseIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  @media (prefers-reduced-motion: reduce){.veh-card{animation:none;}}
+  .veh-card .plate{margin-bottom:14px;cursor:default;}
+  .row-line{display:flex;justify-content:space-between;align-items:baseline;font-size:13.5px;padding:3px 0;color:var(--ink-soft);}
+  .row-line .v{font-family:'IBM Plex Mono',monospace;font-weight:500;color:var(--ink);}
+  .row-line.neg .v{color:var(--rust);}
+  .divider{border-top:1px solid var(--rule);margin:8px 0;}
+  .netpl-block{text-align:right;margin-top:6px;}
+  .netpl-block .label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
+  .netpl-block .amt{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:24px;}
+  .amt.pos{color:var(--diesel);}
+  .amt.neg{color:var(--rust);}
+  .stat-foot{display:flex;gap:14px;margin-top:12px;padding-top:10px;border-top:1px dashed var(--rule);font-size:11.5px;color:var(--muted);flex-wrap:wrap;}
+
+  .hero-band{
+    background:var(--ink);color:var(--paper);border-radius:12px;padding:24px 22px;
+    box-shadow:var(--shadow);
+  }
+  .hero-band .eyebrow{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:2px;font-size:12px;color:#C9C2AC;margin-bottom:14px;}
+  .equation{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;}
+  .eq-term{display:flex;flex-direction:column;}
+  .eq-term .t-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:#A9A187;margin-bottom:3px;}
+  .eq-term .t-val{font-size:22px;font-weight:600;}
+  .eq-op{font-size:22px;color:#A9A187;padding:0 2px;}
+  .eq-final{background:var(--yellow);color:var(--plate-ink);border-radius:8px;padding:8px 16px;}
+  .eq-final .t-label{color:var(--plate-ink);opacity:.7;}
+  .eq-final .t-val{font-size:26px;}
+  .hero-foot{margin-top:14px;font-size:12px;color:#A9A187;}
+
+  /* ---------- tables ---------- */
+  .panel{background:var(--card);border-radius:10px;box-shadow:var(--shadow);overflow:hidden;}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--rule);flex-wrap:wrap;gap:8px;}
+  .panel-head h2{font-family:'Oswald',sans-serif;text-transform:uppercase;font-size:16px;letter-spacing:.5px;margin:0;}
+  .panel-head .cap{font-size:12px;color:var(--muted);}
+  .btn{
+    font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:13px;border:none;border-radius:6px;
+    padding:8px 14px;cursor:pointer;transition:background .12s ease, opacity .12s ease;
+  }
+  .btn-add{background:var(--ink);color:var(--paper);}
+  .btn-add:hover{background:#34384a;}
+  .btn-ghost{background:none;color:var(--ink-soft);border:1px solid var(--rule);}
+  .btn-ghost:hover{border-color:var(--ink-soft);color:var(--ink);}
+  .btn-save{background:var(--diesel);color:#fff;}
+  .btn-save:hover{background:#255a40;}
+  .btn-danger{background:var(--rust);color:#fff;}
+
+  .tbl-scroll{overflow-x:auto;}
+  table.ledger{width:100%;border-collapse:collapse;min-width:560px;}
+  table.ledger th{
+    text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);
+    padding:10px 14px;border-bottom:1.5px solid var(--rule);white-space:nowrap;font-weight:600;
+  }
+  table.ledger td{padding:10px 14px;border-bottom:1px solid var(--rule);font-size:13.5px;white-space:nowrap;}
+  table.ledger td.num{font-family:'IBM Plex Mono',monospace;}
+  table.ledger tbody tr:hover{background:var(--paper-deep);}
+  table.ledger tfoot td{font-weight:600;background:var(--paper-deep);font-family:'IBM Plex Mono',monospace;border-top:2px solid var(--ink);border-bottom:none;}
+  .row-actions{display:flex;gap:6px;}
+  .icon-btn{background:none;border:none;cursor:pointer;font-size:14px;color:var(--muted);padding:2px 5px;border-radius:4px;}
+  .icon-btn:hover{color:var(--ink);background:var(--paper-deep);}
+  .icon-btn.confirm{color:#fff;background:var(--rust);font-size:11px;font-weight:600;padding:3px 8px;}
+
+  .empty-state{padding:34px 18px;text-align:center;color:var(--muted);font-size:13.5px;}
+  .empty-state .big{font-family:'Oswald',sans-serif;text-transform:uppercase;color:var(--ink-soft);font-size:14px;margin-bottom:4px;letter-spacing:.4px;}
+
+  /* ---------- forms ---------- */
+  .entry-form{padding:16px 18px;background:var(--paper-deep);border-bottom:1px solid var(--rule);}
+  .field-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px;}
+  .field-grid label{display:flex;flex-direction:column;font-size:11.5px;color:var(--ink-soft);gap:4px;font-weight:600;}
+  .field-grid input,.field-grid select{
+    font-family:'IBM Plex Sans',sans-serif;font-size:13.5px;padding:7px 9px;border:1px solid var(--rule);
+    border-radius:5px;background:#fff;color:var(--ink);
+  }
+  .field-grid input:focus,.field-grid select:focus{outline:2px solid var(--rust);outline-offset:1px;}
+  .form-actions{display:flex;gap:8px;justify-content:flex-end;}
+
+  .fd-hint{font-size:10px;color:var(--muted);font-weight:400;margin-top:1px;letter-spacing:0;display:block;}
+
+  /* ---------- month switcher ---------- */
+  .month-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .month-nav{background:none;border:1.5px solid var(--rule);border-radius:6px;cursor:pointer;font-size:18px;line-height:1;padding:4px 10px;color:var(--ink-soft);transition:border-color .12s ease,color .12s ease;}
+  .month-nav:hover{border-color:var(--ink);color:var(--ink);}
+  .month-label{font-family:'Oswald',sans-serif;font-weight:600;font-size:20px;letter-spacing:.3px;color:var(--ink);min-width:140px;text-align:center;}
+  .company-edit-row{display:flex;align-items:center;gap:8px;}
+  .company-edit-row input{font-family:'Oswald',sans-serif;font-size:24px;padding:4px 8px;border:1px solid var(--rule);border-radius:4px;background:#fff;min-width:220px;}
+  .edit-pencil{background:none;border:none;cursor:pointer;font-size:13px;color:var(--muted);padding:2px 5px;border-radius:4px;}
+  .edit-pencil:hover{color:var(--rust);}
+  .page-foot{text-align:center;margin-top:30px;font-size:12px;color:var(--muted);}
+  .page-foot button{background:none;border:none;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:12px;}
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(20,21,27,.55);display:flex;align-items:center;
+    justify-content:center;padding:20px;z-index:50;
+  }
+  .modal-box{background:var(--card);border-radius:10px;padding:22px;max-width:380px;box-shadow:var(--shadow);}
+  .modal-box h3{font-family:'Oswald',sans-serif;text-transform:uppercase;margin:0 0 8px;font-size:16px;}
+  .modal-box p{font-size:13.5px;color:var(--ink-soft);margin:0 0 18px;}
+  .modal-actions{display:flex;gap:8px;justify-content:flex-end;}
+  .toast{
+    position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);
+    padding:9px 16px;border-radius:7px;font-size:12.5px;z-index:60;opacity:0;transition:opacity .25s ease;
+    pointer-events:none;
+  }
+  .toast.show{opacity:1;}
+  .loading-state{padding:60px 0;text-align:center;color:var(--muted);font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:1px;font-size:13px;}
+  .storage-banner{background:var(--rust-soft);border:1px solid var(--rust);color:var(--rust);font-size:12.5px;padding:10px 14px;border-radius:7px;margin-bottom:16px;}
+
+  @media (max-width:520px){
+    .ledger-head{align-items:flex-start;}
+    .equation{justify-content:flex-start;}
+    .eq-op{display:none;}
+    .eq-term, .eq-final{width:100%;}
+  }
+</style>
+
+<div id="rt-root"><div class="wrap" id="rt-app"><div class="loading-state">Opening the ledger…</div></div></div>
+
+
+<!-- Online version: Supabase client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/*
+  RAMDEV TRANSPORT — ONLINE CONFIG
+  Replace these two placeholders with your Supabase project's:
+  - Project URL
+  - Publishable/anon key
+
+  IMPORTANT: Never put a Supabase service_role/secret key in this file.
+*/
+window.RT_SUPABASE_URL = window.RT_SUPABASE_URL || "https://tukjhgpkzlnulnyxoqrn.supabase.co/rest/v1/";
+window.RT_SUPABASE_ANON_KEY = window.RT_SUPABASE_ANON_KEY || "sb_publishable_uOYjdin6FywvIoIVJr2i1g_QY8ygwPh";
+</script>
+
+<script>
+(function(){
+  const DEFAULT_VEHICLES = [
+    {id:'v1', plate:'MH 14 DV 2114'},
+    {id:'v2', plate:'MH 45 AX 3804'},
+    {id:'v3', plate:'MH 45 AX 3805'}
+  ];
+  const DEFAULT_DRIVERS = [
+    {id:'e1', name:'Bandu Rajge'},
+    {id:'e2', name:'Sachin Rupnavar'},
+    {id:'e3', name:'Bharat Jathar'},
+    {id:'e4', name:'Bhau Rupnavar'},
+    {id:'e5', name:'Yallappa Aiwale'}
+  ];
+  const PAYMENT_MODES = ['Paid','To Pay','Cash','Online / UPI','Cheque'];
+
+  const root = document.getElementById('rt-app');
+
+  let state = {
+    companyName:'Ramdev Transport',
+    editingName:false,
+    activeMonth:'2026-07',   // YYYY-MM — the month currently being viewed
+    vehicles: DEFAULT_VEHICLES.slice(),
+    drivers: DEFAULT_DRIVERS.slice(),
+    bookings:{},   // keyed by vehicle id, for activeMonth only
+    expenses:{},
+    salary:{},
+    tab:'dashboard',
+    vehicle:'v1',
+    driver:'e1',
+    form:null,
+    addingVehicle:false,
+    addingDriver:false,
+    confirmDeleteId:null,
+    confirmRemove:null,
+    showResetModal:false,
+    ready:false,
+    storageOk:true
+  };
+  let confirmTimer = null;
+  let toastTimer = null;
+
+  function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+  function toNum(v){ const n=parseFloat(v); return isNaN(n)?0:n; }
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function fmtINR(n){ const sign = n<0?'−':''; return sign+'₹'+Math.round(Math.abs(n)).toLocaleString('en-IN'); }
+  function fmtNum(n, suffix){ return (Math.round(toNum(n)*100)/100) + (suffix||''); }
+
+  const LS_PREFIX = 'ramdevTransport:';
+  function localStorageAvailable(){
+    try{ const k='__rt_probe__'; localStorage.setItem(k,'1'); localStorage.removeItem(k); return true; }
+    catch(e){ return false; }
+  }
+  async function loadKey(key, fallback){
+    try{
+      const raw = localStorage.getItem(LS_PREFIX+key);
+      return raw!=null ? JSON.parse(raw) : fallback;
+    }catch(e){ return fallback; }
+  }
+  async function saveKey(key, value){
+    try{
+      localStorage.setItem(LS_PREFIX+key, JSON.stringify(value));
+      if(!state.storageOk){ state.storageOk=true; render(); }
+      return true;
+    }catch(e){
+      state.storageOk=false;
+      toast("Couldn't save — storage may be full, private/incognito mode, or blocked");
+      render();
+      return false;
+    }
+  }
+  // Month-scoped helpers — data is isolated per YYYY-MM
+  function monthKey(table, month){ return table+':'+month; }
+  async function loadMonthData(month){
+    const [bookings, expenses, salary] = await Promise.all([
+      loadKey(monthKey('rt-bookings', month), {}),
+      loadKey(monthKey('rt-expenses', month), {}),
+      loadKey(monthKey('rt-salary', month), {})
+    ]);
+    state.bookings = bookings||{};
+    state.expenses = expenses||{};
+    state.salary = salary||{};
+  }
+  async function saveMonthTable(table){
+    return saveKey(monthKey('rt-'+table, state.activeMonth), state[table]);
+  }
+
+  function toast(msg){
+    let t = document.querySelector('.rt-toast');
+    if(!t){ t = document.createElement('div'); t.className='toast rt-toast'; document.getElementById('rt-root').appendChild(t); }
+    t.textContent = msg;
+    requestAnimationFrame(()=>t.classList.add('show'));
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>t.classList.remove('show'), 2400);
+  }
+
+  async function init(){
+    state.storageOk = localStorageAvailable();
+    const [meta, vehicles, drivers] = await Promise.all([
+      loadKey('rt-meta', null),
+      loadKey('rt-vehicles', DEFAULT_VEHICLES),
+      loadKey('rt-drivers', DEFAULT_DRIVERS)
+    ]);
+    if(meta){
+      state.companyName = meta.companyName || meta.title || state.companyName;
+      state.activeMonth = meta.activeMonth || state.activeMonth;
+    }
+    state.vehicles = Array.isArray(vehicles) ? vehicles : DEFAULT_VEHICLES.slice();
+    state.drivers = Array.isArray(drivers) ? drivers : DEFAULT_DRIVERS.slice();
+    await loadMonthData(state.activeMonth);
+    if(!state.vehicles.find(v=>v.id===state.vehicle)) state.vehicle = state.vehicles[0] ? state.vehicles[0].id : null;
+    if(!state.drivers.find(d=>d.id===state.driver)) state.driver = state.drivers[0] ? state.drivers[0].id : null;
+    state.ready = true;
+    render();
+  }
+  async function saveMeta(){
+    return saveKey('rt-meta', {companyName:state.companyName, activeMonth:state.activeMonth});
+  }
+
+  function vehicleStats(id){
+    const bks = state.bookings[id]||[];
+    const exs = state.expenses[id]||[];
+    const freight = bks.reduce((s,b)=>s+toNum(b.freight),0);
+    const distance = bks.reduce((s,b)=>s+toNum(b.distance),0);
+    const weight = bks.reduce((s,b)=>s+toNum(b.weight),0);
+    const maintenance = exs.reduce((s,e)=>s+toNum(e.maintenanceExp),0);
+    const dieselExp = exs.reduce((s,e)=>s+toNum(e.dieselExp),0);
+    const dieselLtr = exs.reduce((s,e)=>s+toNum(e.dieselLtr),0);
+    const fastag = exs.reduce((s,e)=>s+toNum(e.fastag),0);
+    const netPL = freight - maintenance - dieselExp - fastag;
+    return {freight,distance,weight,maintenance,dieselExp,dieselLtr,fastag,netPL,trips:bks.length};
+  }
+  function driverTotal(id){ return (state.salary[id]||[]).reduce((s,r)=>s+toNum(r.amount),0); }
+  function totals(){
+    const per = state.vehicles.map(v=>({vehicle:v, stats:vehicleStats(v.id)}));
+    const totalNetPL = per.reduce((s,p)=>s+p.stats.netPL,0);
+    const totalSalary = state.drivers.reduce((s,d)=>s+driverTotal(d.id),0);
+    return {per, totalNetPL, totalSalary, finalNetPL: totalNetPL-totalSalary};
+  }
+
+  /* ---------------- render ---------------- */
+  function render(){
+    if(!state.ready){ root.innerHTML = '<div class="loading-state">Opening the ledger…</div>'; return; }
+    root.innerHTML = renderHeader() + (state.storageOk? '' : renderStorageBanner()) + renderTabs() + renderTabContent() + renderFooter()
+      + (state.showResetModal? renderResetModal() : '')
+      + (state.confirmRemove? renderRemoveModal() : '');
+  }
+
+  function renderStorageBanner(){
+    return '<div class="storage-banner">⚠ This browser tab can\'t save right now (storage may be full, disabled, or you\'re in private/incognito mode). Entries you add won\'t be kept after you close this tab — download a backup from the link below before you leave.</div>';
+  }
+
+  function fmtMonth(yyyymm){
+    const [y,m] = yyyymm.split('-');
+    const d = new Date(parseInt(y), parseInt(m)-1, 1);
+    return d.toLocaleString('en-IN', {month:'long', year:'numeric'});
+  }
+  function stepMonth(yyyymm, delta){
+    const [y,m] = yyyymm.split('-').map(Number);
+    const d = new Date(y, m-1+delta, 1);
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  }
+
+  function renderHeader(){
+    const monthDisplay = fmtMonth(state.activeMonth);
+    const nameHtml = state.editingName
+      ? '<form class="company-edit-row" data-form="company-name">'
+        + '<input name="name" value="'+esc(state.companyName)+'" required autofocus />'
+        + '<button class="btn btn-save" type="submit">Save</button>'
+        + '<button class="btn btn-ghost" type="button" data-action="cancel-name">Cancel</button>'
+        + '</form>'
+      : '<div style="display:flex;align-items:center;gap:6px;">'
+        + '<h1 style="margin:0;cursor:default;font-family:Oswald,sans-serif;font-weight:700;text-transform:uppercase;font-size:clamp(22px,4vw,34px);letter-spacing:.5px;">'+esc(state.companyName)+'</h1>'
+        + '<button class="edit-pencil" data-action="edit-name" title="Rename">✎</button>'
+        + '</div>';
+    return '<div class="ledger-head">'
+      + nameHtml
+      + '<div class="month-bar">'
+      + '<button class="month-nav" data-action="prev-month" title="Previous month">‹</button>'
+      + '<span class="month-label">'+esc(monthDisplay)+'</span>'
+      + '<button class="month-nav" data-action="next-month" title="Next month">›</button>'
+      + '</div>'
+      + '</div>';
+  }
+
+  function renderTabs(){
+    const tabs = [['dashboard','P/L Dashboard'],['bookings','Bookings'],['expenses','Expenses'],['salary','Salary']];
+    return '<div class="tabs">'+tabs.map(function(t){
+      return '<button class="tab-btn '+(state.tab===t[0]?'active':'')+'" data-action="tab" data-tab="'+t[0]+'">'+t[1]+'</button>';
+    }).join('')+'</div>';
+  }
+
+  function renderTabContent(){
+    if(state.tab==='dashboard') return renderDashboard();
+    if(state.tab==='bookings') return renderBookingsTab();
+    if(state.tab==='expenses') return renderExpensesTab();
+    if(state.tab==='salary') return renderSalaryTab();
+    return '';
+  }
+
+  function renderDashboard(){
+    if(!state.vehicles.length){
+      return '<div class="empty-state"><div class="big">No vehicles yet</div>Add your first truck from the Bookings or Expenses tab.</div>';
+    }
+    const t = totals();
+    const cards = t.per.map(function(p){
+      const vehicle=p.vehicle, stats=p.stats;
+      return '<div class="veh-card">'
+        + '<div class="plate">'+esc(vehicle.plate)+'<span class="trips">'+stats.trips+' trip'+(stats.trips===1?'':'s')+'</span></div>'
+        + '<div class="row-line"><span>Freight earned</span><span class="v">'+fmtINR(stats.freight)+'</span></div>'
+        + '<div class="divider"></div>'
+        + '<div class="row-line neg"><span>Maintenance</span><span class="v">'+fmtINR(stats.maintenance)+'</span></div>'
+        + '<div class="row-line neg"><span>Diesel ('+fmtNum(stats.dieselLtr)+' L)</span><span class="v">'+fmtINR(stats.dieselExp)+'</span></div>'
+        + '<div class="row-line neg"><span>FASTag</span><span class="v">'+fmtINR(stats.fastag)+'</span></div>'
+        + '<div class="netpl-block"><div class="label">Net P/L</div><div class="amt '+(stats.netPL>=0?'pos':'neg')+'">'+fmtINR(stats.netPL)+'</div></div>'
+        + '<div class="stat-foot"><span>'+fmtNum(stats.distance)+' km</span><span>'+fmtNum(stats.weight)+' t carried</span></div>'
+        + '</div>';
+    }).join('');
+
+    return '<div class="veh-grid">'+cards+'</div>'
+      + '<div class="hero-band">'
+      + '<div class="eyebrow">All vehicles · '+esc(fmtMonth(state.activeMonth))+'</div>'
+      + '<div class="equation">'
+      + '<div class="eq-term"><span class="t-label">Total Net P/L</span><span class="t-val">'+fmtINR(t.totalNetPL)+'</span></div>'
+      + '<span class="eq-op">−</span>'
+      + '<div class="eq-term"><span class="t-label">Total Salary</span><span class="t-val">'+fmtINR(t.totalSalary)+'</span></div>'
+      + '<span class="eq-op">=</span>'
+      + '<div class="eq-final"><span class="t-label">Final Net P/L</span><span class="t-val">'+fmtINR(t.finalNetPL)+'</span></div>'
+      + '</div>'
+      + '<div class="hero-foot">Freight across all trucks, less maintenance, diesel and FASTag, less driver &amp; staff salary advances.</div>'
+      + '</div>';
+  }
+
+  function vehicleChipRow(activeKey){
+    const chips = state.vehicles.map(function(v){
+      const s = vehicleStats(v.id);
+      return '<div class="plate '+(activeKey===v.id?'active':'')+'" data-action="select-vehicle" data-vehicle="'+v.id+'">'
+        + esc(v.plate)+'<span class="trips">'+s.trips+' trip'+(s.trips===1?'':'s')+'</span>'
+        + '<button class="chip-x" type="button" data-action="request-remove-vehicle" data-vehicle="'+v.id+'" data-label="'+esc(v.plate)+'" title="Remove vehicle">✕</button>'
+        + '</div>';
+    }).join('');
+    const addChip = '<div class="add-chip" data-action="add-vehicle-toggle">+ Add vehicle</div>';
+    const form = state.addingVehicle ? (
+      '<form class="inline-add-form" data-form="add-vehicle">'
+      + '<input name="plate" placeholder="e.g. MH 12 AB 1234" required autofocus />'
+      + '<button class="btn btn-save" type="submit">Add</button>'
+      + '<button class="btn btn-ghost" type="button" data-action="cancel-add-vehicle">Cancel</button>'
+      + '</form>'
+    ) : '';
+    return '<div class="chip-row">'+chips+addChip+'</div>'+form;
+  }
+
+  function driverChipRow(activeKey){
+    const chips = state.drivers.map(function(d){
+      const initial = (d.name||'?').trim()[0]||'?';
+      return '<div class="person-chip '+(activeKey===d.id?'active':'')+'" data-action="select-driver" data-driver="'+d.id+'">'
+        + '<span class="person-avatar">'+esc(initial)+'</span>'+esc(d.name)
+        + '<button class="chip-x" type="button" data-action="request-remove-driver" data-driver="'+d.id+'" data-label="'+esc(d.name)+'" title="Remove driver">✕</button>'
+        + '</div>';
+    }).join('');
+    const addChip = '<div class="add-chip" data-action="add-driver-toggle">+ Add driver</div>';
+    const form = state.addingDriver ? (
+      '<form class="inline-add-form" data-form="add-driver">'
+      + '<input name="name" placeholder="Driver or staff name" required autofocus />'
+      + '<button class="btn btn-save" type="submit">Add</button>'
+      + '<button class="btn btn-ghost" type="button" data-action="cancel-add-driver">Cancel</button>'
+      + '</form>'
+    ) : '';
+    return '<div class="person-row">'+chips+addChip+'</div>'+form;
+  }
+
+  /* ---- Bookings ---- */
+  function renderBookingsTab(){
+    if(!state.vehicles.length){
+      return vehicleChipRow(null) + '<div class="empty-state"><div class="big">No vehicles yet</div>Add a truck above to start logging bookings.</div>';
+    }
+    const v = state.vehicle;
+    const entries = (state.bookings[v]||[]).slice().sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
+    const stats = vehicleStats(v);
+    const showForm = state.form && state.form.table==='bookings';
+    const editing = showForm && state.form.editingId ? entries.find(function(x){ return x.id===state.form.editingId; }) : null;
+
+    const rows = entries.map(function(en){
+      const isConfirm = state.confirmDeleteId===en.id;
+      return '<tr>'
+        + '<td>'+esc(en.date||'—')+'</td>'
+        + '<td>'+esc(en.loading||'—')+' → '+esc(en.unloading||'—')+'</td>'
+        + '<td>'+esc(en.lrNo||'—')+'</td>'
+        + '<td class="num">'+fmtNum(en.weight,' t')+'</td>'
+        + '<td class="num">'+fmtINR(toNum(en.rate))+'</td>'
+        + '<td class="num">'+fmtINR(toNum(en.freight))+'</td>'
+        + '<td class="num">'+fmtNum(en.distance)+' km</td>'
+        + '<td>'+esc(en.paymentMode||'—')+'</td>'
+        + '<td><div class="row-actions">'
+        + '<button class="icon-btn" data-action="edit-entry" data-table="bookings" data-key="'+v+'" data-id="'+en.id+'" title="Edit">✎</button>'
+        + '<button class="icon-btn '+(isConfirm?'confirm':'')+'" data-action="delete-entry" data-table="bookings" data-key="'+v+'" data-id="'+en.id+'">'+(isConfirm?'Confirm?':'✕')+'</button>'
+        + '</div></td></tr>';
+    }).join('');
+
+    const vehicleObj = state.vehicles.find(function(x){ return x.id===v; });
+    const table = entries.length ? (
+      '<div class="tbl-scroll"><table class="ledger">'
+      + '<thead><tr><th>Date</th><th>Loading → Unloading</th><th>LR No.</th><th>Weight</th><th>Rate (₹/t)</th><th>Freight</th><th>Distance</th><th>Payment</th><th></th></tr></thead>'
+      + '<tbody>'+rows+'</tbody>'
+      + '<tfoot><tr><td colspan="3">Total</td><td>'+fmtNum(stats.weight,' t')+'</td><td></td><td>'+fmtINR(stats.freight)+'</td><td>'+fmtNum(stats.distance)+' km</td><td colspan="2"></td></tr></tfoot>'
+      + '</table></div>'
+    ) : '<div class="empty-state"><div class="big">No bookings logged yet</div>Add the first trip for '+esc(vehicleObj?vehicleObj.plate:'this truck')+' below.</div>';
+
+    const form = showForm ? bookingForm(editing) : '';
+
+    return vehicleChipRow(v)
+      + '<div class="panel"><div class="panel-head"><h2>Bookings</h2>'
+      + '<button class="btn btn-add" data-action="show-add-form" data-table="bookings">+ Add booking</button></div>'
+      + form + table + '</div>';
+  }
+
+  function bookingForm(editing){
+    const e = editing || {};
+    const w = toNum(e.weight), r = toNum(e.rate);
+    // If editing, show the saved freight; if new, show auto-calc if weight+rate exist
+    const freightVal = editing ? (e.freight ?? '') : (w && r ? w*r : '');
+    return '<form class="entry-form" data-form="entry" data-table="bookings" data-key="'+state.vehicle+'" data-editing-id="'+(editing?e.id:'')+'">'
+      + '<div class="field-grid">'
+      + '<label>Date<input type="date" name="date" value="'+esc(e.date||'')+'" required></label>'
+      + '<label>Loading from<input type="text" name="loading" value="'+esc(e.loading||'')+'" placeholder="City" required></label>'
+      + '<label>Unloading at<input type="text" name="unloading" value="'+esc(e.unloading||'')+'" placeholder="City" required></label>'
+      + '<label>LR No.<input type="text" name="lrNo" value="'+esc(e.lrNo||'')+'"></label>'
+      + '<label>Weight (tons)<input type="number" step="any" name="weight" value="'+(e.weight??'')+'"></label>'
+      + '<label>Rate (₹/ton)<input type="number" step="any" name="rate" value="'+(e.rate??'')+'"></label>'
+      + '<label>Freight (₹)<input type="number" step="any" name="freight" id="freight-field" value="'+(freightVal||'')+'" placeholder="Enter or auto-calc"><span class="fd-hint">Auto-fills from weight × rate. You can also type it directly.</span></label>'
+      + '<label>Distance (km)<input type="number" step="any" name="distance" value="'+(e.distance??'')+'"></label>'
+      + '<label>Payment mode<select name="paymentMode">'+PAYMENT_MODES.map(function(m){ return '<option '+(e.paymentMode===m?'selected':'')+'>'+m+'</option>'; }).join('')+'</select></label>'
+      + '</div>'
+      + '<div class="form-actions">'
+      + '<button type="button" class="btn btn-ghost" data-action="cancel-form">Cancel</button>'
+      + '<button type="submit" class="btn btn-save">'+(editing?'Save changes':'Add booking')+'</button>'
+      + '</div></form>';
+  }
+
+  /* ---- Expenses ---- */
+  function renderExpensesTab(){
+    if(!state.vehicles.length){
+      return vehicleChipRow(null) + '<div class="empty-state"><div class="big">No vehicles yet</div>Add a truck above to start logging expenses.</div>';
+    }
+    const v = state.vehicle;
+    const entries = (state.expenses[v]||[]).slice().sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
+    const stats = vehicleStats(v);
+    const showForm = state.form && state.form.table==='expenses';
+    const editing = showForm && state.form.editingId ? entries.find(function(x){ return x.id===state.form.editingId; }) : null;
+
+    const rows = entries.map(function(en){
+      const isConfirm = state.confirmDeleteId===en.id;
+      return '<tr>'
+        + '<td>'+esc(en.date||'—')+'</td>'
+        + '<td>'+esc(en.maintenanceReason||'—')+'</td>'
+        + '<td class="num">'+fmtINR(toNum(en.maintenanceExp))+'</td>'
+        + '<td class="num">'+fmtNum(en.dieselLtr)+' L</td>'
+        + '<td class="num">'+fmtINR(toNum(en.dieselExp))+'</td>'
+        + '<td class="num">'+fmtINR(toNum(en.fastag))+'</td>'
+        + '<td><div class="row-actions">'
+        + '<button class="icon-btn" data-action="edit-entry" data-table="expenses" data-key="'+v+'" data-id="'+en.id+'" title="Edit">✎</button>'
+        + '<button class="icon-btn '+(isConfirm?'confirm':'')+'" data-action="delete-entry" data-table="expenses" data-key="'+v+'" data-id="'+en.id+'">'+(isConfirm?'Confirm?':'✕')+'</button>'
+        + '</div></td></tr>';
+    }).join('');
+
+    const vehicleObj = state.vehicles.find(function(x){ return x.id===v; });
+    const table = entries.length ? (
+      '<div class="tbl-scroll"><table class="ledger">'
+      + '<thead><tr><th>Date</th><th>Maintenance reason</th><th>Maint. ₹</th><th>Diesel L</th><th>Diesel ₹</th><th>FASTag ₹</th><th></th></tr></thead>'
+      + '<tbody>'+rows+'</tbody>'
+      + '<tfoot><tr><td colspan="2">Total</td><td>'+fmtINR(stats.maintenance)+'</td><td>'+fmtNum(stats.dieselLtr)+' L</td><td>'+fmtINR(stats.dieselExp)+'</td><td>'+fmtINR(stats.fastag)+'</td><td></td></tr></tfoot>'
+      + '</table></div>'
+    ) : '<div class="empty-state"><div class="big">No expenses logged yet</div>Add the first expense for '+esc(vehicleObj?vehicleObj.plate:'this truck')+' below.</div>';
+
+    const form = showForm ? expenseForm(editing) : '';
+
+    return vehicleChipRow(v)
+      + '<div class="panel"><div class="panel-head"><h2>Expenses</h2>'
+      + '<button class="btn btn-add" data-action="show-add-form" data-table="expenses">+ Add expense</button></div>'
+      + form + table + '</div>';
+  }
+
+  function expenseForm(editing){
+    const e = editing || {};
+    return '<form class="entry-form" data-form="entry" data-table="expenses" data-key="'+state.vehicle+'" data-editing-id="'+(editing?e.id:'')+'">'
+      + '<div class="field-grid">'
+      + '<label>Date<input type="date" name="date" value="'+esc(e.date||'')+'" required></label>'
+      + '<label>Maintenance reason<input type="text" name="maintenanceReason" value="'+esc(e.maintenanceReason||'')+'" placeholder="Tyre, service…"></label>'
+      + '<label>Maintenance (₹)<input type="number" step="any" name="maintenanceExp" value="'+(e.maintenanceExp??'')+'"></label>'
+      + '<label>Diesel (litres)<input type="number" step="any" name="dieselLtr" value="'+(e.dieselLtr??'')+'"></label>'
+      + '<label>Diesel (₹)<input type="number" step="any" name="dieselExp" value="'+(e.dieselExp??'')+'"></label>'
+      + '<label>FASTag (₹)<input type="number" step="any" name="fastag" value="'+(e.fastag??'')+'"></label>'
+      + '</div>'
+      + '<div class="form-actions">'
+      + '<button type="button" class="btn btn-ghost" data-action="cancel-form">Cancel</button>'
+      + '<button type="submit" class="btn btn-save">'+(editing?'Save changes':'Add expense')+'</button>'
+      + '</div></form>';
+  }
+
+  /* ---- Salary ---- */
+  function renderSalaryTab(){
+    if(!state.drivers.length){
+      return driverChipRow(null) + '<div class="empty-state"><div class="big">No drivers yet</div>Add a driver above to start logging salary advances.</div>';
+    }
+    const dId = state.driver;
+    const entries = (state.salary[dId]||[]).slice().sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
+    const total = driverTotal(dId);
+    const grandTotal = state.drivers.reduce(function(s,d){ return s+driverTotal(d.id); },0);
+    const showForm = state.form && state.form.table==='salary';
+    const editing = showForm && state.form.editingId ? entries.find(function(x){ return x.id===state.form.editingId; }) : null;
+
+    const rows = entries.map(function(en){
+      const isConfirm = state.confirmDeleteId===en.id;
+      return '<tr>'
+        + '<td>'+esc(en.date||'—')+'</td>'
+        + '<td class="num">'+fmtINR(toNum(en.amount))+'</td>'
+        + '<td>'+esc(en.note||'—')+'</td>'
+        + '<td><div class="row-actions">'
+        + '<button class="icon-btn" data-action="edit-entry" data-table="salary" data-key="'+dId+'" data-id="'+en.id+'" title="Edit">✎</button>'
+        + '<button class="icon-btn '+(isConfirm?'confirm':'')+'" data-action="delete-entry" data-table="salary" data-key="'+dId+'" data-id="'+en.id+'">'+(isConfirm?'Confirm?':'✕')+'</button>'
+        + '</div></td></tr>';
+    }).join('');
+
+    const driverObj = state.drivers.find(function(x){ return x.id===dId; });
+    const dName = driverObj ? driverObj.name : 'driver';
+    const table = entries.length ? (
+      '<div class="tbl-scroll"><table class="ledger">'
+      + '<thead><tr><th>Date</th><th>Amount</th><th>Note</th><th></th></tr></thead>'
+      + '<tbody>'+rows+'</tbody>'
+      + '<tfoot><tr><td>Total</td><td>'+fmtINR(total)+'</td><td colspan="2"></td></tr></tfoot>'
+      + '</table></div>'
+    ) : '<div class="empty-state"><div class="big">No advances logged yet</div>Add '+esc(dName)+'\'s first salary entry below.</div>';
+
+    const form = showForm ? salaryForm(editing) : '';
+
+    return driverChipRow(dId)
+      + '<div class="panel">'
+      + '<div class="panel-head"><h2>Salary — '+esc(dName)+'</h2>'
+      + '<div class="cap">All staff this period: <strong class="mono">'+fmtINR(grandTotal)+'</strong></div></div>'
+      + '<div class="panel-head" style="border-top:1px solid var(--rule);border-bottom:none;padding-top:0;"><span></span>'
+      + '<button class="btn btn-add" data-action="show-add-form" data-table="salary">+ Add entry</button></div>'
+      + form + table + '</div>';
+  }
+
+  function salaryForm(editing){
+    const e = editing || {};
+    return '<form class="entry-form" data-form="entry" data-table="salary" data-key="'+state.driver+'" data-editing-id="'+(editing?e.id:'')+'">'
+      + '<div class="field-grid">'
+      + '<label>Date<input type="date" name="date" value="'+esc(e.date||'')+'" required></label>'
+      + '<label>Amount (₹)<input type="number" step="any" name="amount" value="'+(e.amount??'')+'" required></label>'
+      + '<label>Note<input type="text" name="note" value="'+esc(e.note||'')+'" placeholder="Optional"></label>'
+      + '</div>'
+      + '<div class="form-actions">'
+      + '<button type="button" class="btn btn-ghost" data-action="cancel-form">Cancel</button>'
+      + '<button type="submit" class="btn btn-save">'+(editing?'Save changes':'Add entry')+'</button>'
+      + '</div></form>';
+  }
+
+  function renderFooter(){
+    return '<div class="page-foot">Built for '+esc(state.companyName)+' · saved in this browser, on this device'
+      + ' &nbsp;·&nbsp; <button data-action="export-backup">Download backup</button>'
+      + ' &nbsp;·&nbsp; <button data-action="import-backup">Restore backup</button>'
+      + ' &nbsp;·&nbsp; <button data-action="open-reset">Clear all data</button>'
+      + '<input type="file" id="rt-import-input" accept="application/json" style="display:none">'
+      + '</div>';
+  }
+
+  function renderResetModal(){
+    return '<div class="modal-overlay" data-action="cancel-reset-overlay">'
+      + '<div class="modal-box">'
+      + '<h3>Clear all data?</h3>'
+      + '<p>This removes all bookings, expenses and salary entries for <strong>'+esc(fmtMonth(state.activeMonth))+'</strong> only. Vehicle and driver names stay. Other months are untouched. This can\'t be undone.</p>'
+      + '<div class="modal-actions">'
+      + '<button class="btn btn-ghost" data-action="cancel-reset">Cancel</button>'
+      + '<button class="btn btn-danger" data-action="confirm-reset">Clear everything</button>'
+      + '</div></div></div>';
+  }
+
+  function renderRemoveModal(){
+    const cr = state.confirmRemove;
+    const noun = cr.type==='vehicle' ? 'vehicle' : 'driver';
+    const dataNote = cr.type==='vehicle' ? 'Its logged bookings and expenses will be deleted too.' : 'Their logged salary advances will be deleted too.';
+    return '<div class="modal-overlay" data-action="cancel-remove">'
+      + '<div class="modal-box">'
+      + '<h3>Remove '+noun+'?</h3>'
+      + '<p>Remove <strong>'+esc(cr.label)+'</strong>? '+dataNote+' This can\'t be undone.</p>'
+      + '<div class="modal-actions">'
+      + '<button class="btn btn-ghost" data-action="cancel-remove">Cancel</button>'
+      + '<button class="btn btn-danger" data-action="confirm-remove">Remove</button>'
+      + '</div></div></div>';
+  }
+
+  /* ---------------- actions ---------------- */
+  async function handleAction(act, ds){
+    if(act==='tab'){ state.tab=ds.tab; state.form=null; render(); return; }
+    if(act==='select-vehicle'){ state.vehicle=ds.vehicle; state.form=null; render(); return; }
+    if(act==='select-driver'){ state.driver=ds.driver; state.form=null; render(); return; }
+    if(act==='show-add-form'){ state.form={table:ds.table, key: ds.table==='salary'?state.driver:state.vehicle, editingId:null}; render(); return; }
+    if(act==='edit-entry'){ state.form={table:ds.table, key:ds.key, editingId:ds.id}; render(); return; }
+    if(act==='cancel-form'){ state.form=null; render(); return; }
+    if(act==='edit-name'){ state.editingName=true; render(); return; }
+    if(act==='cancel-name'){ state.editingName=false; render(); return; }
+    if(act==='prev-month' || act==='next-month'){
+      const next = stepMonth(state.activeMonth, act==='prev-month'?-1:1);
+      state.activeMonth = next;
+      state.form = null;
+      render(); // render immediately with loading feel
+      await loadMonthData(state.activeMonth);
+      await saveMeta();
+      render();
+      return;
+    }
+    if(act==='add-vehicle-toggle'){ state.addingVehicle=!state.addingVehicle; render(); return; }
+    if(act==='cancel-add-vehicle'){ state.addingVehicle=false; render(); return; }
+    if(act==='add-driver-toggle'){ state.addingDriver=!state.addingDriver; render(); return; }
+    if(act==='cancel-add-driver'){ state.addingDriver=false; render(); return; }
+    if(act==='open-reset'){ state.showResetModal=true; render(); return; }
+    if(act==='export-backup'){ handleExportBackup(); return; }
+    if(act==='import-backup'){ const inp=document.getElementById('rt-import-input'); if(inp) inp.click(); return; }
+    if(act==='cancel-reset' || act==='cancel-reset-overlay'){ state.showResetModal=false; render(); return; }
+    if(act==='request-remove-vehicle'){ state.confirmRemove={type:'vehicle', id:ds.vehicle, label:ds.label}; render(); return; }
+    if(act==='request-remove-driver'){ state.confirmRemove={type:'driver', id:ds.driver, label:ds.label}; render(); return; }
+    if(act==='cancel-remove'){ state.confirmRemove=null; render(); return; }
+    if(act==='confirm-reset'){
+      state.bookings={}; state.expenses={}; state.salary={};
+      state.showResetModal=false; render();
+      await Promise.all([saveMonthTable('bookings'), saveMonthTable('expenses'), saveMonthTable('salary')]);
+      toast('Data cleared for '+fmtMonth(state.activeMonth));
+      return;
+    }
+    if(act==='confirm-remove'){
+      const cr = state.confirmRemove;
+      if(cr.type==='vehicle'){
+        state.vehicles = state.vehicles.filter(function(v){ return v.id!==cr.id; });
+        delete state.bookings[cr.id]; delete state.expenses[cr.id];
+        if(state.vehicle===cr.id) state.vehicle = state.vehicles[0] ? state.vehicles[0].id : null;
+        state.confirmRemove=null; render();
+        await Promise.all([saveKey('rt-vehicles',state.vehicles), saveMonthTable('bookings'), saveMonthTable('expenses')]);
+      } else {
+        state.drivers = state.drivers.filter(function(d){ return d.id!==cr.id; });
+        delete state.salary[cr.id];
+        if(state.driver===cr.id) state.driver = state.drivers[0] ? state.drivers[0].id : null;
+        state.confirmRemove=null; render();
+        await Promise.all([saveKey('rt-drivers',state.drivers), saveMonthTable('salary')]);
+      }
+      toast('Removed');
+      return;
+    }
+    if(act==='delete-entry'){
+      if(state.confirmDeleteId===ds.id){
+        clearTimeout(confirmTimer);
+        state.confirmDeleteId=null;
+        const arr = state[ds.table][ds.key]||[];
+        state[ds.table][ds.key] = arr.filter(function(x){ return x.id!==ds.id; });
+        render();
+        await saveMonthTable(ds.table);
+        toast('Entry deleted');
+      } else {
+        state.confirmDeleteId = ds.id;
+        render();
+        clearTimeout(confirmTimer);
+        confirmTimer = setTimeout(function(){ state.confirmDeleteId=null; render(); }, 3000);
+      }
+      return;
+    }
+  }
+
+  async function handleEntrySubmit(form){
+    const ds = form.dataset;
+    const fd = new FormData(form);
+    const table = ds.table, key = ds.key, editingId = ds.editingId;
+    let entry = {};
+    fd.forEach(function(val,name){ entry[name]=val; });
+    if(table==='bookings'){
+      const manualFreight = toNum(entry.freight);
+      const autoFreight = toNum(entry.weight) * toNum(entry.rate);
+      entry.freight = manualFreight || autoFreight;
+    }
+    const arr = state[table][key] = state[table][key] || [];
+    if(editingId){
+      const idx = arr.findIndex(function(x){ return x.id===editingId; });
+      if(idx>-1) arr[idx] = Object.assign({}, arr[idx], entry, {id:editingId});
+    } else {
+      entry.id = uid();
+      arr.push(entry);
+    }
+    state.form=null;
+    render();
+    await saveMonthTable(table);
+    toast(editingId? 'Entry updated' : 'Entry added');
+  }
+
+  async function handleCompanyNameSubmit(form){
+    const fd = new FormData(form);
+    const name = (fd.get('name')||'').trim();
+    if(name) state.companyName = name;
+    state.editingName=false;
+    render();
+    await saveMeta();
+  }
+
+  async function handleAddVehicleSubmit(form){
+    const fd = new FormData(form);
+    const plate = (fd.get('plate')||'').trim().toUpperCase();
+    if(!plate) return;
+    const id = 'v_'+uid();
+    state.vehicles.push({id, plate});
+    state.addingVehicle=false;
+    state.vehicle = id;
+    render();
+    await saveKey('rt-vehicles', state.vehicles);
+    toast('Vehicle added');
+  }
+
+  async function handleAddDriverSubmit(form){
+    const fd = new FormData(form);
+    const name = (fd.get('name')||'').trim();
+    if(!name) return;
+    const id = 'e_'+uid();
+    state.drivers.push({id, name});
+    state.addingDriver=false;
+    state.driver = id;
+    render();
+    await saveKey('rt-drivers', state.drivers);
+    toast('Driver added');
+  }
+
+  function updateFreightPreview(form, changedField){
+    const wEl = form.querySelector('[name="weight"]');
+    const rEl = form.querySelector('[name="rate"]');
+    const fEl = form.querySelector('[name="freight"]');
+    if(!fEl) return;
+    // Only auto-fill if the user changed weight or rate (not freight itself)
+    // and the freight field hasn't been manually edited
+    if(changedField === 'freight') return; // user is typing freight manually — leave it alone
+    const w = toNum(wEl ? wEl.value : 0);
+    const r = toNum(rEl ? rEl.value : 0);
+    if(w && r) fEl.value = w * r;
+    else if(!w || !r) fEl.value = ''; // clear if either is removed
+  }
+
+  function handleExportBackup(){
+    // Collect all month data from localStorage
+    const allMonthData = {};
+    for(let i=0; i<localStorage.length; i++){
+      const k = localStorage.key(i);
+      if(k && k.startsWith(LS_PREFIX+'rt-')){
+        const shortKey = k.slice(LS_PREFIX.length);
+        try{ allMonthData[shortKey] = JSON.parse(localStorage.getItem(k)); }catch(e){}
+      }
+    }
+    const payload = {
+      app:'ramdev-transport-backup', exportedAt:new Date().toISOString(),
+      companyName:state.companyName, activeMonth:state.activeMonth,
+      vehicles:state.vehicles, drivers:state.drivers,
+      allData: allMonthData
+    };
+    const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ramdev-transport-backup-'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('Backup downloaded');
+  }
+
+  async function handleImportFile(file){
+    try{
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if(!data || !Array.isArray(data.vehicles)){ toast("That doesn't look like a backup file"); return; }
+      // Restore all month data back into localStorage
+      if(data.allData){
+        Object.keys(data.allData).forEach(function(k){
+          localStorage.setItem(LS_PREFIX+k, JSON.stringify(data.allData[k]));
+        });
+      }
+      state.companyName = data.companyName || data.meta && data.meta.title || state.companyName;
+      state.activeMonth = data.activeMonth || state.activeMonth;
+      state.vehicles = data.vehicles;
+      state.drivers = Array.isArray(data.drivers) ? data.drivers : [];
+      await saveKey('rt-vehicles', state.vehicles);
+      await saveKey('rt-drivers', state.drivers);
+      await saveMeta();
+      await loadMonthData(state.activeMonth);
+      if(!state.vehicles.find(function(v){ return v.id===state.vehicle; })) state.vehicle = state.vehicles[0] ? state.vehicles[0].id : null;
+      if(!state.drivers.find(function(d){ return d.id===state.driver; })) state.driver = state.drivers[0] ? state.drivers[0].id : null;
+      render();
+      toast('Backup restored — all months loaded');
+    }catch(e){ toast("Couldn't read that file"); }
+  }
+
+  document.getElementById('rt-root').addEventListener('click', function(e){
+    const t = e.target.closest('[data-action]');
+    if(!t) return;
+    const act = t.dataset.action;
+    // Overlay-dismiss actions must only fire when the click landed on the overlay
+    // itself, not when a button inside bubbles up through it.
+    if((act==='cancel-reset-overlay' || act==='cancel-remove') && e.target !== t) return;
+    handleAction(act, t.dataset);
+  });
+
+  document.getElementById('rt-root').addEventListener('change', function(e){
+    if(e.target.id==='rt-import-input' && e.target.files && e.target.files[0]){
+      handleImportFile(e.target.files[0]);
+      e.target.value = '';
+    }
+  });
+
+  document.getElementById('rt-root').addEventListener('input', function(e){
+    const form = e.target.closest('form[data-table="bookings"]');
+    if(form && (e.target.name==='weight' || e.target.name==='rate' || e.target.name==='freight')) updateFreightPreview(form, e.target.name);
+  });
+
+  document.getElementById('rt-root').addEventListener('submit', function(e){
+    e.preventDefault();
+    const form = e.target;
+    if(form.dataset.form==='entry') handleEntrySubmit(form);
+    else if(form.dataset.form==='company-name') handleCompanyNameSubmit(form);
+    else if(form.dataset.form==='add-vehicle') handleAddVehicleSubmit(form);
+    else if(form.dataset.form==='add-driver') handleAddDriverSubmit(form);
+  });
+
+
+  init();
+})();
+</script>
